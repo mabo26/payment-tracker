@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="應收帳款">
+<title>應收帳款追蹤</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,'Helvetica Neue',sans-serif;background:#0f1117;color:#e8e8f0;min-height:100vh;padding:0 0 100px;-webkit-overflow-scrolling:touch;}
+
+/* TopBar */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(15,17,23,0.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid #1e2130;padding:max(env(safe-area-inset-top),14px) 16px 0;}
+.topbar-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.app-title{font-size:18px;font-weight:700;color:#fff;}
+.app-sub{font-size:10px;color:#444;letter-spacing:1px;margin-top:1px;}
+.topbar-actions{display:flex;gap:8px;}
+.icon-btn{width:34px;height:34px;border-radius:10px;border:1px solid #252836;background:#1a1d27;color:#888;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.icon-btn:active{opacity:0.7;}
+
+/* Year Switcher */
+.year-bar{display:flex;align-items:center;gap:6px;overflow-x:auto;padding:0 0 8px;scrollbar-width:none;}
+.year-bar::-webkit-scrollbar{display:none;}
+.year-btn{flex-shrink:0;padding:4px 14px;border-radius:16px;border:1px solid #1e2130;background:#1a1d27;color:#555;font-size:13px;font-weight:500;cursor:pointer;}
+.year-btn.active{background:#7c7cf8;border-color:#7c7cf8;color:#fff;font-weight:700;}
+.year-new-btn{flex-shrink:0;padding:4px 12px;border-radius:16px;border:1px dashed #333;background:none;color:#444;font-size:12px;cursor:pointer;}
+
+/* Tabs */
+.tab-row{display:flex;border-bottom:1px solid #1e2130;}
+.tab-btn{padding:8px 14px;font-size:13px;font-weight:500;color:#555;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.tab-btn.active{color:#7c7cf8;border-bottom-color:#7c7cf8;font-weight:600;}
+
+/* Summary */
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px 0;}
+.card{background:#1a1d27;border:1px solid #1e2130;border-radius:12px;padding:12px 8px;text-align:center;}
+.card-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#444;margin-bottom:4px;}
+.card-value{font-size:14px;font-weight:700;}
+.cv-t{color:#fff;}.cv-p{color:#34d399;}.cv-u{color:#f97066;}
+
+/* Month Nav */
+.month-nav{display:flex;gap:6px;overflow-x:auto;padding:10px 14px 0;scrollbar-width:none;}
+.month-nav::-webkit-scrollbar{display:none;}
+.month-btn{flex-shrink:0;padding:5px 12px;border-radius:20px;border:1px solid #1e2130;background:#1a1d27;color:#555;font-size:12px;font-weight:500;cursor:pointer;position:relative;}
+.month-btn.active{background:#7c7cf8;border-color:#7c7cf8;color:#fff;font-weight:600;}
+.month-btn .dot{position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:#f97066;}
+.month-btn.all-paid .dot{background:#34d399;}
+.month-btn.no-dot .dot{display:none;}
+
+/* List */
+.list-wrap{padding:10px 14px 0;}
+.section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#333;margin:16px 0 8px 2px;}
+
+.vendor-group{background:#1a1d27;border:1px solid #1e2130;border-radius:16px;margin-bottom:10px;overflow:hidden;}
+.vendor-header{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;user-select:none;}
+.vendor-icon{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:rgba(124,124,248,0.15);color:#7c7cf8;}
+.vendor-info{flex:1;min-width:0;}
+.vendor-name{font-size:14px;font-weight:600;color:#e0e0f0;}
+.vendor-meta{font-size:11px;color:#555;margin-top:1px;}
+.vendor-right{text-align:right;flex-shrink:0;}
+.vendor-total{font-size:14px;font-weight:700;color:#fff;}
+.vendor-remain{font-size:10px;color:#f97066;margin-top:2px;}
+.vendor-remain.done{color:#34d399;}
+.chevron{display:inline-block;font-size:10px;color:#333;transition:transform 0.2s;margin-left:4px;}
+.vendor-group.collapsed .chevron{transform:rotate(-90deg);}
+.progress-wrap{padding:0 14px 2px;}
+.progress-bar{height:2px;background:#1e2130;border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,#7c7cf8,#34d399);transition:width 0.4s;}
+.installments{border-top:1px solid #1e2130;}
+.vendor-group.collapsed .installments,.vendor-group.collapsed .progress-wrap{display:none;}
+
+.install-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #1a1d27;}
+.install-row:last-child{border-bottom:none;}
+.install-num{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:#1e2130;color:#444;}
+.install-row.is-paid .install-num{background:#34d399;color:#0f1117;}
+.install-row.is-overdue .install-num{background:rgba(249,112,102,0.15);color:#f97066;}
+.install-row.is-upcoming .install-num{background:rgba(124,124,248,0.12);color:#7c7cf8;}
+.install-info{flex:1;}
+.install-label{font-size:13px;font-weight:500;color:#c0c0d0;}
+.install-due{font-size:11px;color:#444;margin-top:1px;}
+.install-right{text-align:right;flex-shrink:0;}
+.install-bal{font-size:14px;font-weight:600;color:#e8e8f0;}
+.install-sunny{font-size:10px;color:#444;margin-top:1px;}
+.install-sunny em{color:#7c7cf8;font-style:normal;}
+
+.single-item{background:#1a1d27;border:1px solid #1e2130;border-radius:14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;padding:13px 14px;}
+.single-item.is-paid{border-left:3px solid #34d399;}
+.single-item.is-overdue{border-left:3px solid #f97066;}
+.single-item.is-upcoming{border-left:3px solid #7c7cf8;}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.is-paid .sdot{background:#34d399;}.is-overdue .sdot{background:#f97066;}.is-upcoming .sdot{background:#7c7cf8;}
+.sinfo{flex:1;}
+.sname{font-size:14px;font-weight:600;color:#e0e0f0;}
+.sdue{font-size:11px;color:#444;margin-top:1px;}
+.sdue b{color:#666;font-weight:500;}
+.samount{text-align:right;flex-shrink:0;}
+.sbal{font-size:14px;font-weight:700;color:#fff;}
+.ssunny{font-size:10px;color:#444;margin-top:1px;}
+.ssunny em{color:#7c7cf8;font-style:normal;}
+.check-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid #2a2d3a;background:transparent;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:transparent;}
+.is-paid .check-btn{background:#34d399;border-color:#34d399;color:#0f1117;}
+.empty{text-align:center;padding:40px 0;color:#333;font-size:13px;}
+
+/* Stats */
+.stats-wrap{padding:12px 14px 0;}
+.stats-year-title{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;}
+.stats-year-sub{font-size:12px;color:#444;margin-bottom:14px;}
+.stats-big{background:linear-gradient(135deg,#1a1d27,#1e2235);border:1px solid #252950;border-radius:16px;padding:20px;margin-bottom:10px;text-align:center;}
+.stats-big-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:8px;}
+.stats-big-value{font-size:28px;font-weight:700;color:#7c7cf8;}
+.stats-big-sub{font-size:12px;color:#444;margin-top:4px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.stats-card{background:#1a1d27;border:1px solid #1e2130;border-radius:12px;padding:14px 12px;}
+.stats-card-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#444;margin-bottom:6px;}
+.stats-card-value{font-size:17px;font-weight:700;}
+.sc-green{color:#34d399;}.sc-red{color:#f97066;}.sc-purple{color:#7c7cf8;}.sc-white{color:#fff;}
+.stats-vendor-row{background:#1a1d27;border:1px solid #1e2130;border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.svr-name{font-size:13px;font-weight:600;color:#c0c0d0;}
+.svr-meta{font-size:11px;color:#444;margin-top:2px;}
+.svr-right{text-align:right;}
+.svr-bal{font-size:14px;font-weight:700;color:#fff;}
+.svr-paid{font-size:10px;color:#34d399;margin-top:2px;}
+.svr-paid.partial{color:#f97066;}
+
+/* Archived badge */
+.archived-badge{display:inline-block;background:rgba(124,124,248,0.12);border:1px solid rgba(124,124,248,0.3);color:#7c7cf8;font-size:10px;font-weight:600;letter-spacing:1px;padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle;}
+
+/* Settings */
+.settings-wrap{padding:12px 14px 0;}
+.settings-section-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#444;margin:16px 0 8px;}
+.settings-card{background:#1a1d27;border:1px solid #1e2130;border-radius:14px;overflow:hidden;margin-bottom:10px;}
+.settings-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #1a1d27;cursor:pointer;}
+.settings-row:last-child{border-bottom:none;}
+.settings-row:active{background:rgba(255,255,255,0.03);}
+.settings-icon{font-size:20px;width:28px;text-align:center;}
+.settings-info{flex:1;}
+.settings-label{font-size:14px;font-weight:500;color:#e0e0f0;}
+.settings-sub{font-size:11px;color:#444;margin-top:2px;}
+.settings-arrow{color:#333;font-size:14px;}
+.howto-card{background:#1a1d27;border:1px solid #1e2130;border-radius:14px;padding:16px;margin-bottom:10px;}
+.howto-title{font-size:13px;font-weight:600;color:#e0e0f0;margin-bottom:10px;}
+.howto-step{display:flex;gap:10px;margin-bottom:10px;}
+.howto-step:last-child{margin-bottom:0;}
+.step-num{width:22px;height:22px;border-radius:50%;background:#7c7cf8;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-text{font-size:13px;color:#888;line-height:1.5;}
+.step-text b{color:#c0c0d0;}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:#1a1d27;border:1px solid #252836;border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:20px 18px;padding-bottom:max(44px,env(safe-area-inset-bottom));max-height:88vh;overflow-y:auto;}
+.modal-title{font-size:17px;font-weight:700;color:#fff;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;}
+.modal-close{background:#252836;border:none;color:#888;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:11px;font-weight:600;color:#555;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;display:block;}
+.form-input{width:100%;background:#0f1117;border:1px solid #252836;border-radius:10px;padding:11px 12px;color:#e8e8f0;font-size:15px;font-family:inherit;outline:none;-webkit-appearance:none;appearance:none;}
+.form-input:focus{border-color:#7c7cf8;}
+select.form-input{color:#e8e8f0;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.type-toggle{display:flex;gap:8px;margin-bottom:14px;}
+.type-btn{flex:1;padding:10px;border-radius:10px;border:1px solid #252836;background:#0f1117;color:#555;font-size:13px;font-weight:500;cursor:pointer;}
+.type-btn.active{background:#7c7cf8;border-color:#7c7cf8;color:#fff;}
+.install-entry{background:#0f1117;border:1px solid #1e2130;border-radius:10px;padding:12px;margin-bottom:8px;position:relative;}
+.install-entry-title{font-size:11px;color:#555;margin-bottom:8px;}
+.remove-install{position:absolute;top:8px;right:8px;background:none;border:none;color:#444;cursor:pointer;font-size:16px;}
+.add-install-btn{width:100%;padding:10px;border-radius:10px;border:1px dashed #252836;background:none;color:#555;font-size:13px;cursor:pointer;margin-bottom:14px;}
+.submit-btn{width:100%;padding:14px;border-radius:12px;border:none;background:#7c7cf8;color:#fff;font-size:15px;font-weight:600;cursor:pointer;}
+.submit-btn:active{opacity:0.85;}
+.danger-btn{background:#f97066;}
+
+/* New Year Modal */
+.new-year-info{background:#0f1117;border:1px solid #1e2130;border-radius:12px;padding:14px;margin-bottom:16px;}
+.new-year-info p{font-size:13px;color:#888;line-height:1.6;}
+.new-year-info b{color:#c0c0d0;}
+
+.toast{position:fixed;bottom:max(100px,calc(env(safe-area-inset-bottom) + 90px));left:50%;transform:translateX(-50%);background:#252836;color:#e8e8f0;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:300;pointer-events:none;opacity:0;transition:opacity 0.3s;white-space:nowrap;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-row1">
+    <div>
+      <div class="app-title">💰 應收帳款追蹤</div>
+      <div class="app-sub" id="appSub">必格味股份有限公司</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" onclick="openAddModal()">＋</button>
+      <button class="icon-btn" onclick="showTab('settings')">⚙️</button>
+    </div>
+  </div>
+  <!-- Year switcher -->
+  <div class="year-bar" id="yearBar"></div>
+  <!-- Tabs -->
+  <div class="tab-row">
+    <button class="tab-btn active" id="tab-month" onclick="showTab('month')">月份</button>
+    <button class="tab-btn" id="tab-all" onclick="showTab('all')">全部</button>
+    <button class="tab-btn" id="tab-stats" onclick="showTab('stats')">年度統計</button>
+    <button class="tab-btn" id="tab-settings" onclick="showTab('settings')">設定</button>
+  </div>
+</div>
+
+<div class="summary">
+  <div class="card"><div class="card-label">實收總額</div><div class="card-value cv-t" id="sumTotal">—</div></div>
+  <div class="card"><div class="card-label">已收款</div><div class="card-value cv-p" id="sumPaid">—</div></div>
+  <div class="card"><div class="card-label">未收款</div><div class="card-value cv-u" id="sumUnpaid">—</div></div>
+</div>
+
+<div class="month-nav" id="monthNav"></div>
+<div id="mainContent"></div>
+
+<!-- Add Vendor Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-title">新增廠商 <button class="modal-close" onclick="closeModal('addModal')">✕</button></div>
+    <div class="form-group">
+      <label class="form-label">廠商名稱</label>
+      <input class="form-input" id="f-name" placeholder="例：好勁道、南僑">
+    </div>
+    <div class="form-group">
+      <label class="form-label">付款方式</label>
+      <div class="type-toggle">
+        <button class="type-btn active" id="type-single" onclick="setType('single')">單筆付款</button>
+        <button class="type-btn" id="type-multi" onclick="setType('multi')">分期付款</button>
+      </div>
+    </div>
+    <div id="single-fields">
+      <div class="form-group">
+        <label class="form-label">合約總金額</label>
+        <input class="form-input" id="f-total" type="number" placeholder="例：300000">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">應付月份</label>
+          <select class="form-input" id="f-month">
+            <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+            <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+            <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+            <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">日期說明</label>
+          <input class="form-input" id="f-day" placeholder="例：4月20日">
+        </div>
+      </div>
+    </div>
+    <div id="multi-fields" style="display:none">
+      <div id="installFields"></div>
+      <button class="add-install-btn" onclick="addInstallEntry()">＋ 新增一期</button>
+    </div>
+    <button class="submit-btn" onclick="submitVendor()">確認新增</button>
+  </div>
+</div>
+
+<!-- New Year Modal -->
+<div class="modal-overlay" id="newYearModal">
+  <div class="modal">
+    <div class="modal-title">開新年度 <button class="modal-close" onclick="closeModal('newYearModal')">✕</button></div>
+    <div class="new-year-info">
+      <p>將會建立一個<b>全新的年度</b>，目前年度的資料會完整保留，可隨時切換回去查看。</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">新年度</label>
+      <input class="form-input" id="f-newyear" type="number" placeholder="例：2027">
+    </div>
+    <button class="submit-btn" onclick="createNewYear()">建立新年度</button>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <div class="modal-title">匯入備份 <button class="modal-close" onclick="closeModal('importModal')">✕</button></div>
+    <div class="form-group">
+      <label class="form-label">貼上備份內容（JSON）</label>
+      <textarea class="form-input" id="importText" rows="8" placeholder="把備份檔案內容貼在這裡…" style="resize:none;line-height:1.5;font-size:12px;"></textarea>
+    </div>
+    <button class="submit-btn" onclick="doImport()">確認匯入</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// 預設 2026 資料
+// ══════════════════════════════════════════════════════
+const DATA_2026 = {
+  year: 2026,
+  archived: false,
+  vendors: [
+    {id:'haojindao',name:'好勁道',icon:'勁',type:'multi',installments:[
+      {id:101,period:'1/4',month:3, day:'3月31日',  total:750000, sunny:150000,balance:600000},
+      {id:102,period:'2/4',month:6, day:'6月30日',  total:625000, sunny:125000,balance:500000},
+      {id:103,period:'3/4',month:9, day:'9月30日',  total:625000, sunny:125000,balance:500000},
+      {id:104,period:'4/4',month:12,day:'12月31日', total:500000, sunny:100000,balance:400000},
+    ]},
+    {id:'matcha',name:'抹茶',icon:'茶',type:'multi',installments:[
+      {id:201,period:'1/3',month:2, day:'2月15日前',total:360000, sunny:72000, balance:288000},
+      {id:202,period:'2/3',month:5, day:'5月31日前',total:480000, sunny:96000, balance:384000},
+      {id:203,period:'3/3',month:11,day:'11月30日', total:360000, sunny:72000, balance:288000},
+    ]},
+    {id:'milk',name:'四葉牛奶',icon:'奶',type:'multi',installments:[
+      {id:301,period:'1/2',month:3, day:'3月16日',  total:47619,  sunny:9524,  balance:38095},
+      {id:302,period:'2/2',month:4, day:'4月15日',  total:114289, sunny:22858, balance:91431},
+    ]},
+    {id:'house',name:'好侍',icon:'侍',type:'multi',installments:[
+      {id:401,period:'1/2',month:7, day:'7月20日',  total:1000000,sunny:200000,balance:800000},
+      {id:402,period:'2/2',month:8, day:'8月20日',  total:1500000,sunny:300000,balance:1200000},
+    ]},
+    {id:'aomori',name:'青森蘋果',icon:'蘋',type:'multi',installments:[
+      {id:501,period:'1/2',month:2, day:'2月11日',  total:36000,  sunny:7200,  balance:28800},
+      {id:502,period:'2/2',month:3, day:'3月31日',  total:84000,  sunny:16800, balance:67200},
+    ]},
+    {id:'nanchiao', name:'南僑',       icon:'僑',type:'single',installments:[{id:601,period:'1/1',month:4,day:'4月20日', total:300000,sunny:60000, balance:240000}]},
+    {id:'oven',     name:'蒸烤箱',     icon:'烤',type:'single',installments:[{id:602,period:'1/1',month:5,day:'5月10日', total:100000,sunny:20000, balance:80000}]},
+    {id:'lecreuset',name:'le creuset', icon:'Le',type:'single',installments:[{id:603,period:'1/1',month:4,day:'4月30日', total:170000,sunny:34000, balance:136000}]},
+    {id:'kikkoman', name:'龜甲萬醬油', icon:'龜',type:'single',installments:[{id:604,period:'1/1',month:7,day:'7月31日', total:170000,sunny:34000, balance:136000}]},
+  ],
+  paid: [101,201,301,302,501,502,601,602,603], // 藍色=已收款
+  nextId: 700
+};
+
+// ══════════════════════════════════════════════════════
+// localStorage
+// ══════════════════════════════════════════════════════
+function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
+
+function saveState(){
+  lsSet('pt_years', years);
+  lsSet('pt_activeYear', activeYear);
+}
+
+function loadState(){
+  const y = lsGet('pt_years');
+  const ay = lsGet('pt_activeYear');
+  if(y && y.length){
+    years = y;
+    activeYear = ay || years[years.length-1].year;
+  } else {
+    years = [JSON.parse(JSON.stringify(DATA_2026))];
+    activeYear = 2026;
+    saveState();
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// 狀態
+// ══════════════════════════════════════════════════════
+let years = [];
+let activeYear = 2026;
+let activeTab = 'month';
+let activeMonth = new Date().getMonth()+1;
+let addType = 'single';
+let installCount = 0;
+
+const MONTHS=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const todayMonth = new Date().getMonth()+1;
+const todayYear  = new Date().getFullYear();
+
+function getYearData(y){ return years.find(d=>d.year===y); }
+function currentData(){ return getYearData(activeYear); }
+function allInstalls(data){ return data.vendors.flatMap(v=>v.installments); }
+function paidSet(data){ return new Set(data.paid); }
+
+function fmt(n){return Math.round(n).toLocaleString('zh-TW');}
+function getStatus(month,id,data){
+  const ps = paidSet(data);
+  if(ps.has(id)) return 'paid';
+  // 只有當年才比較月份
+  if(activeYear < todayYear) return 'overdue';
+  if(activeYear === todayYear && month < todayMonth) return 'overdue';
+  return 'upcoming';
+}
+
+function togglePaid(id){
+  const data = currentData();
+  const idx = data.paid.indexOf(id);
+  if(idx>=0) data.paid.splice(idx,1); else data.paid.push(id);
+  saveState(); render();
+}
+
+// ══════════════════════════════════════════════════════
+// Year Bar
+// ══════════════════════════════════════════════════════
+function renderYearBar(){
+  const bar = document.getElementById('yearBar');
+  bar.innerHTML='';
+  years.forEach(d=>{
+    const btn=document.createElement('button');
+    btn.className='year-btn'+(d.year===activeYear?' active':'');
+    btn.textContent=d.year+(d.archived?' 📁':'');
+    btn.onclick=()=>{activeYear=d.year;activeMonth=new Date().getMonth()+1;render();};
+    bar.appendChild(btn);
+  });
+  const newBtn=document.createElement('button');
+  newBtn.className='year-new-btn';
+  newBtn.textContent='＋ 新年度';
+  newBtn.onclick=()=>{
+    document.getElementById('f-newyear').value=activeYear+1;
+    openModal('newYearModal');
+  };
+  bar.appendChild(newBtn);
+  document.getElementById('appSub').textContent='必格味股份有限公司 · '+activeYear+'年';
+}
+
+// ══════════════════════════════════════════════════════
+// Tabs
+// ══════════════════════════════════════════════════════
+function showTab(t){
+  activeTab=t;
+  ['month','all','stats','settings'].forEach(x=>
+    document.getElementById('tab-'+x).classList.toggle('active',x===t));
+  document.getElementById('monthNav').style.display=t==='month'?'flex':'none';
+  render();
+}
+
+// ══════════════════════════════════════════════════════
+// Render
+// ══════════════════════════════════════════════════════
+function render(){
+  renderYearBar();
+  renderSummary();
+  renderMonthNav();
+  const data=currentData();
+  if(!data){document.getElementById('mainContent').innerHTML='<div class="empty">找不到年度資料</div>';return;}
+  if(activeTab==='month') renderMonthList(data);
+  else if(activeTab==='all') renderAllList(data);
+  else if(activeTab==='stats') renderStats(data);
+  else renderSettings();
+}
+
+function renderSummary(){
+  const data=currentData(); if(!data) return;
+  const ps=paidSet(data);
+  const scope=activeTab==='month'
+    ? allInstalls(data).filter(i=>i.month===activeMonth)
+    : allInstalls(data);
+  const total=scope.reduce((s,i)=>s+i.balance,0);
+  const paid=scope.filter(i=>ps.has(i.id)).reduce((s,i)=>s+i.balance,0);
+  document.getElementById('sumTotal').textContent='$'+fmt(total);
+  document.getElementById('sumPaid').textContent='$'+fmt(paid);
+  document.getElementById('sumUnpaid').textContent='$'+fmt(total-paid);
+}
+
+function renderMonthNav(){
+  const nav=document.getElementById('monthNav');
+  if(activeTab!=='month'){nav.style.display='none';return;}
+  nav.style.display='flex'; nav.innerHTML='';
+  const data=currentData(); if(!data) return;
+  const ps=paidSet(data);
+  for(let m=1;m<=12;m++){
+    const items=allInstalls(data).filter(i=>i.month===m);
+    const btn=document.createElement('button');
+    btn.className='month-btn'+(activeMonth===m?' active':'');
+    btn.textContent=MONTHS[m-1];
+    if(!items.length){btn.classList.add('no-dot');btn.style.opacity='0.3';}
+    else{
+      if(items.every(i=>ps.has(i.id))) btn.classList.add('all-paid');
+      const dot=document.createElement('span');dot.className='dot';btn.appendChild(dot);
+    }
+    btn.onclick=()=>{activeMonth=m;render();};
+    nav.appendChild(btn);
+  }
+}
+
+function renderMonthList(data){
+  const wrap=document.getElementById('mainContent');
+  wrap.innerHTML='<div class="list-wrap" id="listInner"></div>';
+  const inner=document.getElementById('listInner');
+  const mv=data.vendors.filter(v=>v.installments.some(i=>i.month===activeMonth));
+  if(!mv.length){inner.innerHTML='<div class="empty">本月無應收帳款 💪 繼續加油！</div>';return;}
+  mv.forEach(v=>{const el=makeVendorEl(v,data,activeMonth);if(el)inner.appendChild(el);});
+}
+
+function renderAllList(data){
+  const wrap=document.getElementById('mainContent');
+  wrap.innerHTML='<div class="list-wrap" id="listInner"></div>';
+  const inner=document.getElementById('listInner');
+  for(let m=1;m<=12;m++){
+    const mv=data.vendors.filter(v=>v.installments.some(i=>i.month===m));
+    if(!mv.length) continue;
+    const sep=document.createElement('div');sep.className='section-label';sep.textContent=MONTHS[m-1];
+    inner.appendChild(sep);
+    mv.forEach(v=>{const el=makeVendorEl(v,data,m);if(el)inner.appendChild(el);});
+  }
+}
+
+function makeVendorEl(vendor,data,filterMonth){
+  const ps=paidSet(data);
+  const installs=filterMonth?vendor.installments.filter(i=>i.month===filterMonth):vendor.installments;
+  if(!installs.length) return null;
+
+  if(vendor.type==='single'){
+    const inst=installs[0];
+    const status=getStatus(inst.month,inst.id,data);
+    const div=document.createElement('div');
+    div.className=`single-item is-${status}`;
+    div.innerHTML=`
+      <div class="sdot"></div>
+      <div class="sinfo"><div class="sname">${vendor.name}</div><div class="sdue">應付日 <b>${inst.day}</b></div></div>
+      <div class="samount"><div class="sbal">$${fmt(inst.balance)}</div><div class="ssunny">Sunny <em>$${fmt(inst.sunny)}</em></div></div>
+      <button class="check-btn">${ps.has(inst.id)?'✓':''}</button>`;
+    div.querySelector('.check-btn').addEventListener('click',e=>{e.stopPropagation();togglePaid(inst.id);});
+    return div;
+  }
+
+  const totalBal=vendor.installments.reduce((s,i)=>s+i.balance,0);
+  const paidBal=vendor.installments.filter(i=>ps.has(i.id)).reduce((s,i)=>s+i.balance,0);
+  const paidCnt=vendor.installments.filter(i=>ps.has(i.id)).length;
+  const total=vendor.installments.length;
+  const pct=totalBal>0?Math.round(paidBal/totalBal*100):0;
+  const remain=totalBal-paidBal;
+
+  const group=document.createElement('div');
+  group.className='vendor-group';
+  group.innerHTML=`
+    <div class="vendor-header">
+      <div class="vendor-icon">${vendor.icon||vendor.name[0]}</div>
+      <div class="vendor-info">
+        <div class="vendor-name">${vendor.name}<span class="chevron">▾</span></div>
+        <div class="vendor-meta">共${total}期 · 已收${paidCnt}/${total}</div>
+      </div>
+      <div class="vendor-right">
+        <div class="vendor-total">$${fmt(totalBal)}</div>
+        <div class="vendor-remain ${remain===0?'done':''}">${remain===0?'✓ 全數已收':'未收 $'+fmt(remain)}</div>
+      </div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div></div>
+    <div class="installments"></div>`;
+  group.querySelector('.vendor-header').addEventListener('click',()=>group.classList.toggle('collapsed'));
+  const iDiv=group.querySelector('.installments');
+  installs.forEach(inst=>{
+    const status=getStatus(inst.month,inst.id,data);
+    const [cur,tot2]=inst.period.split('/');
+    const row=document.createElement('div');
+    row.className=`install-row is-${status}`;
+    row.innerHTML=`
+      <div class="install-num">${cur}</div>
+      <div class="install-info"><div class="install-label">${vendor.name} 第${cur}期／共${tot2}期</div><div class="install-due">應付日 ${inst.day}</div></div>
+      <div class="install-right"><div class="install-bal">$${fmt(inst.balance)}</div><div class="install-sunny">Sunny <em>$${fmt(inst.sunny)}</em></div></div>
+      <button class="check-btn">${ps.has(inst.id)?'✓':''}</button>`;
+    row.querySelector('.check-btn').addEventListener('click',e=>{e.stopPropagation();togglePaid(inst.id);});
+    iDiv.appendChild(row);
+  });
+  return group;
+}
+
+function renderStats(data){
+  const ps=paidSet(data);
+  const all=allInstalls(data);
+  const totalBal=all.reduce((s,i)=>s+i.balance,0);
+  const totalSunny=all.reduce((s,i)=>s+i.sunny,0);
+  const totalFull=all.reduce((s,i)=>s+i.total,0);
+  const paidBal=all.filter(i=>ps.has(i.id)).reduce((s,i)=>s+i.balance,0);
+  const paidCount=all.filter(i=>ps.has(i.id)).length;
+  const rows=data.vendors.map(v=>{
+    const vb=v.installments.reduce((s,i)=>s+i.balance,0);
+    const vp=v.installments.filter(i=>ps.has(i.id)).reduce((s,i)=>s+i.balance,0);
+    return{name:v.name,total:vb,paid:vp,tot:v.installments.length};
+  }).sort((a,b)=>b.total-a.total);
+
+  document.getElementById('mainContent').innerHTML=`
+  <div class="stats-wrap">
+    <div class="stats-year-title">${data.year} 年度總覽${data.archived?'<span class="archived-badge">已歸檔</span>':''}</div>
+    <div class="stats-year-sub">必格味 · ${data.vendors.length} 家廠商 · ${all.length} 筆款項</div>
+    <div class="stats-big">
+      <div class="stats-big-label">全年實收總額（Balance）</div>
+      <div class="stats-big-value">$${fmt(totalBal)}</div>
+      <div class="stats-big-sub">合約總額 $${fmt(totalFull)} · Sunny費 $${fmt(totalSunny)}</div>
+    </div>
+    <div class="stats-grid">
+      <div class="stats-card"><div class="stats-card-label">已收款</div><div class="stats-card-value sc-green">$${fmt(paidBal)}</div></div>
+      <div class="stats-card"><div class="stats-card-label">未收款</div><div class="stats-card-value sc-red">$${fmt(totalBal-paidBal)}</div></div>
+      <div class="stats-card"><div class="stats-card-label">Sunny 費合計</div><div class="stats-card-value sc-purple">$${fmt(totalSunny)}</div></div>
+      <div class="stats-card"><div class="stats-card-label">已收 / 總筆數</div><div class="stats-card-value sc-white">${paidCount} / ${all.length}</div></div>
+    </div>
+    <div class="section-label" style="margin-top:8px">各廠商明細</div>
+    ${rows.map(r=>`
+      <div class="stats-vendor-row">
+        <div><div class="svr-name">${r.name}</div><div class="svr-meta">共${r.tot}期</div></div>
+        <div class="svr-right"><div class="svr-bal">$${fmt(r.total)}</div>
+        <div class="svr-paid ${r.paid<r.total?'partial':''}">${r.paid===r.total?'✓ 全數已收':'已收 $'+fmt(r.paid)}</div></div>
+      </div>`).join('')}
+  </div>`;
+}
+
+function renderSettings(){
+  document.getElementById('mainContent').innerHTML=`
+  <div class="settings-wrap">
+    <div class="settings-section-title">年度管理</div>
+    <div class="settings-card">
+      <div class="settings-row" onclick="openModal('newYearModal');document.getElementById('f-newyear').value=${activeYear+1}">
+        <div class="settings-icon">🗓️</div>
+        <div class="settings-info"><div class="settings-label">開新年度</div><div class="settings-sub">建立 ${activeYear+1} 年，舊資料完整保留</div></div>
+        <div class="settings-arrow">›</div>
+      </div>
+    </div>
+
+    <div class="settings-section-title">資料備份</div>
+    <div class="settings-card">
+      <div class="settings-row" onclick="doExport()">
+        <div class="settings-icon">📤</div>
+        <div class="settings-info"><div class="settings-label">匯出全部備份</div><div class="settings-sub">下載 JSON 存到 iCloud，包含所有年度</div></div>
+        <div class="settings-arrow">›</div>
+      </div>
+      <div class="settings-row" onclick="openModal('importModal')">
+        <div class="settings-icon">📥</div>
+        <div class="settings-info"><div class="settings-label">匯入備份</div><div class="settings-sub">換手機後貼上備份內容還原</div></div>
+        <div class="settings-arrow">›</div>
+      </div>
+    </div>
+
+    <div class="settings-section-title">加入主畫面</div>
+    <div class="howto-card">
+      <div class="howto-title">📱 把應收帳款追蹤加到 iPhone 主畫面</div>
+      <div class="howto-step"><div class="step-num">1</div><div class="step-text">把 HTML 檔存到 <b>iCloud 雲碟</b></div></div>
+      <div class="howto-step"><div class="step-num">2</div><div class="step-text">用 <b>Safari</b> 從 iCloud 打開它</div></div>
+      <div class="howto-step"><div class="step-num">3</div><div class="step-text">點 Safari 底部 <b>分享按鈕</b>（□↑）</div></div>
+      <div class="howto-step"><div class="step-num">4</div><div class="step-text">選 <b>「加入主畫面」</b> → 名稱填「應收帳款追蹤」→ 新增</div></div>
+    </div>
+
+    <div class="settings-section-title">換手機流程</div>
+    <div class="howto-card">
+      <div class="howto-title">🔄 換新手機資料不流失</div>
+      <div class="howto-step"><div class="step-num">1</div><div class="step-text"><b>換機前：</b>點「匯出全部備份」存到 iCloud</div></div>
+      <div class="howto-step"><div class="step-num">2</div><div class="step-text"><b>換機後：</b>從 iCloud 打開 HTML → 設定 → 匯入備份</div></div>
+      <div class="howto-step"><div class="step-num">3</div><div class="step-text">打開 JSON 檔全選複製，貼上後確認匯入 ✓</div></div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// 新年度
+// ══════════════════════════════════════════════════════
+function createNewYear(){
+  const y=parseInt(document.getElementById('f-newyear').value);
+  if(!y||y<2020||y>2099){showToast('請輸入正確年份');return;}
+  if(years.find(d=>d.year===y)){showToast(`${y} 年度已存在`);return;}
+  years.push({year:y,archived:false,vendors:[],paid:[],nextId:1000+y});
+  activeYear=y;
+  saveState();
+  closeModal('newYearModal');
+  showToast(`✓ ${y} 年度已建立！`);
+  render();
+}
+
+// ══════════════════════════════════════════════════════
+// 匯出 / 匯入
+// ══════════════════════════════════════════════════════
+function doExport(){
+  const data={years,exportedAt:new Date().toISOString(),version:2};
+  const json=JSON.stringify(data,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const date=new Date().toISOString().slice(0,10);
+  a.href=url;a.download=`payment-backup-all-${date}.json`;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('✓ 備份已下載，請存到 iCloud 雲碟');
+}
+
+function doImport(){
+  const text=document.getElementById('importText').value.trim();
+  if(!text){showToast('請貼上備份內容');return;}
+  try{
+    const data=JSON.parse(text);
+    if(data.version===2&&data.years){
+      years=data.years; activeYear=years[years.length-1].year;
+    } else if(data.vendors){
+      // 舊版單年備份
+      const y=data.year||2026;
+      const existing=years.findIndex(d=>d.year===y);
+      if(existing>=0) years[existing]={year:y,archived:false,vendors:data.vendors,paid:data.paid||[],nextId:data.nextId||700};
+      else years.push({year:y,archived:false,vendors:data.vendors,paid:data.paid||[],nextId:data.nextId||700});
+      activeYear=y;
+    } else {showToast('備份格式不正確');return;}
+    saveState();
+    closeModal('importModal');
+    showToast('✓ 資料已成功匯入！');
+    render();
+  }catch(e){showToast('格式錯誤，請確認備份內容');}
+}
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ══════════════════════════════════════════════════════
+// 新增廠商
+// ══════════════════════════════════════════════════════
+function openAddModal(){
+  installCount=0;
+  ['f-name','f-total','f-day'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('installFields').innerHTML='';
+  setType('single');
+  openModal('addModal');
+}
+function setType(t){
+  addType=t;
+  document.getElementById('type-single').classList.toggle('active',t==='single');
+  document.getElementById('type-multi').classList.toggle('active',t==='multi');
+  document.getElementById('single-fields').style.display=t==='single'?'':'none';
+  document.getElementById('multi-fields').style.display=t==='multi'?'':'none';
+  if(t==='multi'&&installCount===0) addInstallEntry();
+}
+function addInstallEntry(){
+  installCount++;
+  const div=document.createElement('div');div.className='install-entry';div.id='ie-'+installCount;
+  div.innerHTML=`
+    <div class="install-entry-title">第 ${installCount} 期</div>
+    ${installCount>1?`<button class="remove-install" onclick="removeInstall(${installCount})">✕</button>`:''}
+    <div class="form-group"><label class="form-label">合約金額</label><input class="form-input ie-total" type="number" placeholder="例：750000"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">應付月份</label>
+        <select class="form-input ie-month">${[1,2,3,4,5,6,7,8,9,10,11,12].map(m=>`<option value="${m}">${m}月</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label class="form-label">日期說明</label><input class="form-input ie-day" placeholder="例：3月31日"></div>
+    </div>`;
+  document.getElementById('installFields').appendChild(div);
+}
+function removeInstall(n){const el=document.getElementById('ie-'+n);if(el)el.remove();}
+
+function submitVendor(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){showToast('請輸入廠商名稱');return;}
+  const data=currentData();
+  const icon=name.slice(0,2);const vid='v'+Date.now();
+  if(addType==='single'){
+    const total=parseFloat(document.getElementById('f-total').value)||0;
+    const month=parseInt(document.getElementById('f-month').value)||1;
+    const day=document.getElementById('f-day').value.trim()||`${month}月`;
+    if(!total){showToast('請輸入金額');return;}
+    const sunny=Math.round(total*0.2);const balance=total-sunny;
+    data.vendors.push({id:vid,name,icon,type:'single',installments:[{id:data.nextId++,period:'1/1',month,day,total,sunny,balance}]});
+  }else{
+    const entries=document.querySelectorAll('.install-entry');
+    if(!entries.length){showToast('請新增至少一期');return;}
+    const installs=[];const tot2=entries.length;let err=false;
+    entries.forEach((e,idx)=>{
+      const total=parseFloat(e.querySelector('.ie-total').value)||0;
+      const month=parseInt(e.querySelector('.ie-month').value)||1;
+      const day=e.querySelector('.ie-day').value.trim()||`${month}月`;
+      if(!total){err=true;return;}
+      const sunny=Math.round(total*0.2);const balance=total-sunny;
+      installs.push({id:data.nextId++,period:`${idx+1}/${tot2}`,month,day,total,sunny,balance});
+    });
+    if(err){showToast('請填寫所有期數的金額');return;}
+    data.vendors.push({id:vid,name,icon,type:'multi',installments:installs});
+  }
+  saveState();closeModal('addModal');showToast('✓ 廠商已新增');render();
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ══════════════════════════════════════════════════════
+// Init
+// ══════════════════════════════════════════════════════
+loadState();
+render();
+</script>
+</body>
+</html>

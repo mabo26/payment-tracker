@@ -25,11 +25,15 @@ body{font-family:-apple-system,'Helvetica Neue',sans-serif;background:#f2f4f8;co
 .tab-row{display:flex;border-bottom:1px solid #dde2ee;}
 .tab-btn{padding:8px 14px;font-size:13px;font-weight:500;color:#9aa0b4;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
 .tab-btn.active{color:#6366f1;border-bottom-color:#6366f1;font-weight:600;}
-.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 14px 0;}
+.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 14px 0;}
 .card{background:#fff;border:1px solid #eaecf4;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+.card.card-tax{background:#f1efff;border:1px solid #dcd6ff;}
 .card-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#9aa0b4;margin-bottom:4px;}
+.card-label-row{display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:4px;}
+.card-label-row .card-label{margin-bottom:0;}
+.tax-badge{font-size:8px;background:#6c63ff;color:#fff;border-radius:5px;padding:1px 4px;font-weight:700;letter-spacing:0;text-transform:none;}
 .card-value{font-size:14px;font-weight:700;}
-.cv-t{color:#2d3142;}.cv-p{color:#10b981;}.cv-u{color:#ef4444;}
+.cv-t{color:#2d3142;}.cv-p{color:#10b981;}.cv-u{color:#ef4444;}.cv-tax{color:#6c63ff;}
 .month-nav{display:flex;gap:6px;overflow-x:auto;padding:10px 14px 0;scrollbar-width:none;}
 .month-nav::-webkit-scrollbar{display:none;}
 .month-btn{flex-shrink:0;padding:5px 12px;border-radius:20px;border:1px solid #dde2ee;background:#fff;color:#9aa0b4;font-size:12px;font-weight:500;cursor:pointer;position:relative;}
@@ -204,6 +208,7 @@ select.form-input{color:#2d3142;}
   <div class="card"><div class="card-label">實收總額</div><div class="card-value cv-t" id="sumTotal">—</div></div>
   <div class="card"><div class="card-label">已收款</div><div class="card-value cv-p" id="sumPaid">—</div></div>
   <div class="card"><div class="card-label">未收款</div><div class="card-value cv-u" id="sumUnpaid">—</div></div>
+  <div class="card card-tax"><div class="card-label-row"><div class="card-label">營業稅</div><span class="tax-badge">5%</span></div><div class="card-value cv-tax" id="sumTax">—</div></div>
 </div>
 <div class="month-nav" id="monthNav"></div>
 <div id="mainContent"></div>
@@ -344,7 +349,7 @@ function renderYearBar(){
 }
 function showTab(t){activeTab=t;['month','all','stats','settings'].forEach(x=>document.getElementById('tab-'+x).classList.toggle('active',x===t));document.getElementById('monthNav').style.display=t==='month'?'flex':'none';render();}
 function render(){renderYearBar();renderSummary();renderMonthNav();const data=currentData();if(!data){document.getElementById('mainContent').innerHTML='<div class="empty">找不到年度資料</div>';return;}if(activeTab==='month')renderMonthList(data);else if(activeTab==='all')renderAllList(data);else if(activeTab==='stats')renderStats(data);else renderSettings();}
-function renderSummary(){const data=currentData();if(!data)return;const ps=paidSet(data);const scope=activeTab==='month'?allInstalls(data).filter(i=>i.month===activeMonth):allInstalls(data);const total=scope.reduce((s,i)=>s+i.balance,0);const paid=scope.filter(i=>ps.has(i.id)).reduce((s,i)=>s+i.balance,0);document.getElementById('sumTotal').textContent='$'+fmt(total);document.getElementById('sumPaid').textContent='$'+fmt(paid);document.getElementById('sumUnpaid').textContent='$'+fmt(total-paid);}
+function renderSummary(){const data=currentData();if(!data)return;const ps=paidSet(data);const scope=activeTab==='month'?allInstalls(data).filter(i=>i.month===activeMonth):allInstalls(data);const total=scope.reduce((s,i)=>s+i.balance,0);const paid=scope.filter(i=>ps.has(i.id)).reduce((s,i)=>s+i.balance,0);document.getElementById('sumTotal').textContent='$'+fmt(total);document.getElementById('sumPaid').textContent='$'+fmt(paid);document.getElementById('sumUnpaid').textContent='$'+fmt(total-paid);document.getElementById('sumTax').textContent='$'+fmt(Math.round(total*0.05));}
 function renderMonthNav(){const nav=document.getElementById('monthNav');if(activeTab!=='month'){nav.style.display='none';return;}nav.style.display='flex';nav.innerHTML='';const data=currentData();if(!data)return;const ps=paidSet(data);for(let m=1;m<=12;m++){const items=allInstalls(data).filter(i=>i.month===m);const btn=document.createElement('button');btn.className='month-btn'+(activeMonth===m?' active':'');btn.textContent=MONTHS[m-1];if(!items.length){btn.classList.add('no-dot');btn.style.opacity='0.4';}else{if(items.every(i=>ps.has(i.id)))btn.classList.add('all-paid');const dot=document.createElement('span');dot.className='dot';btn.appendChild(dot);}btn.onclick=()=>{activeMonth=m;render();};nav.appendChild(btn);}}
 function renderMonthList(data){const wrap=document.getElementById('mainContent');wrap.innerHTML='<div class="list-wrap" id="listInner"></div>';const inner=document.getElementById('listInner');const mv=data.vendors.filter(v=>v.installments.some(i=>i.month===activeMonth));if(!mv.length){inner.innerHTML='<div class="empty">本月無應收帳款 💪 繼續加油！</div>';return;}mv.forEach(v=>{const el=makeVendorEl(v,data,activeMonth);if(el)inner.appendChild(el);});}
 function renderAllList(data){const wrap=document.getElementById('mainContent');wrap.innerHTML='<div class="list-wrap" id="listInner"></div>';const inner=document.getElementById('listInner');for(let m=1;m<=12;m++){const mv=data.vendors.filter(v=>v.installments.some(i=>i.month===m));if(!mv.length)continue;const sep=document.createElement('div');sep.className='section-label';sep.textContent=MONTHS[m-1];inner.appendChild(sep);mv.forEach(v=>{const el=makeVendorEl(v,data,m);if(el)inner.appendChild(el);});}}

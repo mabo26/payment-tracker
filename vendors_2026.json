@@ -1,0 +1,45 @@
+{
+  "year": 2026,
+  "vendors": [
+    {"id":"haojindao","name":"好勁道","icon":"勁","type":"multi","installments":[
+      {"id":101,"period":"1/4","month":3,"day":"3月31日","total":750000,"sunny":150000,"balance":600000},
+      {"id":102,"period":"2/4","month":6,"day":"6月30日","total":625000,"sunny":125000,"balance":500000},
+      {"id":103,"period":"3/4","month":9,"day":"9月30日","total":625000,"sunny":125000,"balance":500000},
+      {"id":104,"period":"4/4","month":12,"day":"12月31日","total":500000,"sunny":100000,"balance":400000}
+    ]},
+    {"id":"matcha","name":"抹茶","icon":"茶","type":"multi","installments":[
+      {"id":201,"period":"1/3","month":2,"day":"2月15日前","total":360000,"sunny":72000,"balance":288000},
+      {"id":202,"period":"2/3","month":5,"day":"5月31日前","total":480000,"sunny":96000,"balance":384000},
+      {"id":203,"period":"3/3","month":11,"day":"11月30日","total":360000,"sunny":72000,"balance":288000}
+    ]},
+    {"id":"milk","name":"四葉牛奶","icon":"奶","type":"multi","installments":[
+      {"id":301,"period":"1/2","month":3,"day":"3月16日","total":47619,"sunny":9524,"balance":38095},
+      {"id":302,"period":"2/2","month":4,"day":"4月15日","total":114289,"sunny":22858,"balance":91431}
+    ]},
+    {"id":"house","name":"好侍","icon":"侍","type":"multi","installments":[
+      {"id":401,"period":"1/2","month":7,"day":"7月20日","total":1000000,"sunny":200000,"balance":800000},
+      {"id":402,"period":"2/2","month":8,"day":"8月20日","total":1500000,"sunny":300000,"balance":1200000}
+    ]},
+    {"id":"aomori","name":"青森蘋果","icon":"蘋","type":"multi","installments":[
+      {"id":501,"period":"1/2","month":2,"day":"2月11日","total":36000,"sunny":7200,"balance":28800},
+      {"id":502,"period":"2/2","month":3,"day":"3月31日","total":84000,"sunny":16800,"balance":67200}
+    ]},
+    {"id":"nanchiao","name":"南僑","icon":"僑","type":"single","installments":[
+      {"id":601,"period":"1/1","month":4,"day":"4月20日","total":300000,"sunny":60000,"balance":240000}
+    ]},
+    {"id":"oven","name":"蒸烤箱","icon":"烤","type":"single","installments":[
+      {"id":602,"period":"1/1","month":5,"day":"5月10日","total":100000,"sunny":20000,"balance":80000}
+    ]},
+    {"id":"lecreuset","name":"le creuset","icon":"Le","type":"single","installments":[
+      {"id":603,"period":"1/1","month":4,"day":"4月30日","total":170000,"sunny":34000,"balance":136000}
+    ]},
+    {"id":"kikkoman","name":"龜甲萬醬油","icon":"龜","type":"single","installments":[
+      {"id":604,"period":"1/1","month":7,"day":"7月31日","total":170000,"sunny":34000,"balance":136000}
+    ]},
+    {"id":"mizkan","name":"Mizkan 鰹魚調味料","icon":"鰹魚","type":"single","installments":[
+      {"id":700,"period":"1/1","month":9,"day":"9月15日","total":150000,"sunny":30000,"balance":120000}
+    ]}
+  ],
+  "paid": [101,201,301,302,501,502,601,602,603],
+  "nextId": 701
+}

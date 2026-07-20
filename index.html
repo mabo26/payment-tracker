@@ -333,7 +333,8 @@ const todayMonth=new Date().getMonth()+1,todayYear=new Date().getFullYear();
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 function saveState(){lsSet('pt_years',years);lsSet('pt_activeYear',activeYear);}
-function loadState(){const y=lsGet('pt_years'),ay=lsGet('pt_activeYear');if(y&&y.length){years=y;activeYear=ay||years[years.length-1].year;}else{years=[JSON.parse(JSON.stringify(DATA_2026))];activeYear=2026;saveState();}}
+function loadState(){const y=lsGet('pt_years'),ay=lsGet('pt_activeYear');if(y&&y.length){years=y;activeYear=ay||years[years.length-1].year;mergeNewVendors();}else{years=[JSON.parse(JSON.stringify(DATA_2026))];activeYear=2026;saveState();}}
+function mergeNewVendors(){const y2026=years.find(d=>d.year===2026);if(!y2026)return;let changed=false;DATA_2026.vendors.forEach(v=>{if(!y2026.vendors.find(ev=>ev.id===v.id)){const nv=JSON.parse(JSON.stringify(v));nv.installments.forEach(inst=>{const wasPaid=DATA_2026.paid.includes(inst.id);inst.id=y2026.nextId++;if(wasPaid)y2026.paid.push(inst.id);});y2026.vendors.push(nv);changed=true;}});if(changed)saveState();}
 function getYearData(y){return years.find(d=>d.year===y);}
 function currentData(){return getYearData(activeYear);}
 function allInstalls(data){return data.vendors.flatMap(v=>v.installments);}

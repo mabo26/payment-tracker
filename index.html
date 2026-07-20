@@ -294,7 +294,7 @@ select.form-input{color:#2d3142;}
 </div>
 <div class="toast" id="toast"></div>
 <script>
-const DATA_2026={year:2026,archived:false,vendors:[
+const DATA_2026_FALLBACK={year:2026,archived:false,vendors:[
   {id:'haojindao',name:'好勁道',icon:'勁',type:'multi',installments:[
     {id:101,period:'1/4',month:3,day:'3月31日',total:750000,sunny:150000,balance:600000},
     {id:102,period:'2/4',month:6,day:'6月30日',total:625000,sunny:125000,balance:500000},
@@ -333,8 +333,9 @@ const todayMonth=new Date().getMonth()+1,todayYear=new Date().getFullYear();
 function lsGet(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 function saveState(){lsSet('pt_years',years);lsSet('pt_activeYear',activeYear);}
-function loadState(){const y=lsGet('pt_years'),ay=lsGet('pt_activeYear');if(y&&y.length){years=y;activeYear=ay||years[years.length-1].year;mergeNewVendors();}else{years=[JSON.parse(JSON.stringify(DATA_2026))];activeYear=2026;saveState();}}
-function mergeNewVendors(){const y2026=years.find(d=>d.year===2026);if(!y2026)return;let changed=false;DATA_2026.vendors.forEach(v=>{if(!y2026.vendors.find(ev=>ev.id===v.id)){const nv=JSON.parse(JSON.stringify(v));nv.installments.forEach(inst=>{const wasPaid=DATA_2026.paid.includes(inst.id);inst.id=y2026.nextId++;if(wasPaid)y2026.paid.push(inst.id);});y2026.vendors.push(nv);changed=true;}});if(changed)saveState();}
+async function fetchLatestData(){try{const resp=await fetch('vendors_2026.json?t='+Date.now(),{cache:'no-store'});if(resp.ok)return await resp.json();}catch(e){}return null;}
+function loadState(remoteData){const source=remoteData?{year:remoteData.year,archived:false,vendors:remoteData.vendors,paid:remoteData.paid,nextId:remoteData.nextId}:DATA_2026_FALLBACK;const y=lsGet('pt_years'),ay=lsGet('pt_activeYear');if(y&&y.length){years=y;activeYear=ay||years[years.length-1].year;mergeNewVendors(source);}else{years=[JSON.parse(JSON.stringify(source))];activeYear=source.year;saveState();}}
+function mergeNewVendors(source){const yEntry=years.find(d=>d.year===source.year);if(!yEntry)return;let changed=false;source.vendors.forEach(v=>{if(!yEntry.vendors.find(ev=>ev.id===v.id)){const nv=JSON.parse(JSON.stringify(v));nv.installments.forEach(inst=>{const wasPaid=source.paid.includes(inst.id);inst.id=yEntry.nextId++;if(wasPaid)yEntry.paid.push(inst.id);});yEntry.vendors.push(nv);changed=true;}});if(changed)saveState();}
 function getYearData(y){return years.find(d=>d.year===y);}
 function currentData(){return getYearData(activeYear);}
 function allInstalls(data){return data.vendors.flatMap(v=>v.installments);}
@@ -385,7 +386,7 @@ function addMsg(role,text){const msgs=document.getElementById('aiMessages');cons
 async function sendAI(){const inp=document.getElementById('aiInput');const text=inp.value.trim();if(!text&&!aiImageBase64)return;addMsg('user',text+(aiImageBase64?' [附圖]':''));inp.value='';autoResize(inp);const loadingDiv=addMsg('assistant','AI 分析中…');loadingDiv.classList.add('loading');const data=currentData();const existingNames=data.vendors.map(v=>v.name).join('、');const userContent=[];if(aiImageBase64){userContent.push({type:'image',source:{type:'base64',media_type:aiImageType,data:aiImageBase64}});}userContent.push({type:'text',text:`目前年度：${activeYear}年\n目前已有廠商：${existingNames}\nSunny費用規則：合約總金額的20%歸Sunny，剩下80%才是實收Balance\n\n用戶輸入：「${text}」\n\n請分析上述資訊（文字或圖片），提取廠商付款資料，並嚴格回傳以下 JSON 格式，不要有任何其他文字：\n{"vendors":[{"name":"廠商名稱","type":"single或multi","installments":[{"month":月份數字,"day":"X月X日","total":合約總金額,"sunny":20%,"balance":80%,"paid":true或false}]}],"message":"用繁體中文簡短說明"}`});try{const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:'你是應收帳款追蹤助手。請從用戶提供的文字或圖片中提取廠商付款資料。只回傳 JSON，不要有任何其他文字、說明或 markdown。',messages:[{role:'user',content:userContent}]})});const result=await resp.json();const raw=result.content.filter(c=>c.type==='text').map(c=>c.text).join('');const parsed=JSON.parse(raw.replace(/```json|```/g,'').trim());loadingDiv.remove();addMsg('assistant',parsed.message||'已分析完成');parsed.vendors.forEach(v=>{const icon=v.name.slice(0,2),vid='v'+Date.now()+Math.random();const installs=v.installments.map((inst,idx)=>({id:data.nextId++,period:`${idx+1}/${v.installments.length}`,month:inst.month,day:inst.day,total:inst.total,sunny:inst.sunny,balance:inst.balance}));data.vendors.push({id:vid,name:v.name,icon,type:v.type,installments:installs});v.installments.forEach((inst,idx)=>{if(inst.paid)data.paid.push(installs[idx].id);});});saveState();render();removeImg();showToast('✓ AI 已自動新增廠商！');}catch(err){loadingDiv.remove();addMsg('assistant','分析失敗，請再試一次或手動新增。');}}
 
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
-loadState();render();
+(async function init(){const remote=await fetchLatestData();loadState(remote);render();})();
 </script>
 </body>
 </html>

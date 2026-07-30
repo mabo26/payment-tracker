@@ -259,6 +259,24 @@
           "balance": 144000
         }
       ]
+    },
+    {
+      "id": "kaohsiungjpfruit",
+      "name": "高雄日本水果",
+      "icon": "日果",
+      "type": "single",
+      "installments": [
+        {
+          "id": 702,
+          "period": "1/1",
+          "month": 8,
+          "day": "8月30日",
+          "total": 100000,
+          "sunny": 20000,
+          "balance": 80000,
+          "taxable": false
+        }
+      ]
     }
   ],
   "paid": [
@@ -273,5 +291,5 @@
     603,
     701
   ],
-  "nextId": 702
+  "nextId": 703
 }

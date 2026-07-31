@@ -277,6 +277,23 @@
           "taxable": false
         }
       ]
+    },
+    {
+      "id": "tqf",
+      "name": "TQF",
+      "icon": "TQ",
+      "type": "single",
+      "installments": [
+        {
+          "id": 703,
+          "period": "1/1",
+          "month": 9,
+          "day": "9月30日",
+          "total": 230000,
+          "sunny": 46000,
+          "balance": 184000
+        }
+      ]
     }
   ],
   "paid": [
@@ -291,5 +308,5 @@
     603,
     701
   ],
-  "nextId": 703
+  "nextId": 704
 }

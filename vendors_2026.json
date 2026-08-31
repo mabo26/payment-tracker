@@ -294,6 +294,23 @@
           "balance": 184000
         }
       ]
+    },
+    {
+      "id": "cloudinvoice0831",
+      "name": "雲端發票尾款",
+      "icon": "發",
+      "type": "single",
+      "installments": [
+        {
+          "id": 704,
+          "period": "1/1",
+          "month": 8,
+          "day": "8月31日",
+          "total": 138000,
+          "sunny": 27600,
+          "balance": 110400
+        }
+      ]
     }
   ],
   "paid": [
@@ -308,5 +325,5 @@
     603,
     701
   ],
-  "nextId": 704
+  "nextId": 705
 }

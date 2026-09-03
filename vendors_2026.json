@@ -311,6 +311,32 @@
           "balance": 110400
         }
       ]
+    },
+    {
+      "id": "boschtaiwan",
+      "name": "Robert Bosch Taiwan",
+      "icon": "Bo",
+      "type": "multi",
+      "installments": [
+        {
+          "id": 705,
+          "period": "1/2",
+          "month": 9,
+          "day": "9月10日",
+          "total": 48000,
+          "sunny": 9600,
+          "balance": 38400
+        },
+        {
+          "id": 706,
+          "period": "2/2",
+          "month": 10,
+          "day": "10月26日",
+          "total": 72000,
+          "sunny": 14400,
+          "balance": 57600
+        }
+      ]
     }
   ],
   "paid": [
@@ -325,5 +351,5 @@
     603,
     701
   ],
-  "nextId": 705
+  "nextId": 707
 }

@@ -337,6 +337,23 @@
           "balance": 57600
         }
       ]
+    },
+    {
+      "id": "lecreuset1015",
+      "name": "LC 鑄鐵鍋",
+      "icon": "LC",
+      "type": "single",
+      "installments": [
+        {
+          "id": 707,
+          "period": "1/1",
+          "month": 10,
+          "day": "10月15日",
+          "total": 170000,
+          "sunny": 34000,
+          "balance": 136000
+        }
+      ]
     }
   ],
   "paid": [
@@ -351,5 +368,5 @@
     603,
     701
   ],
-  "nextId": 707
+  "nextId": 708
 }

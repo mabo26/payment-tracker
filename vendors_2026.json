@@ -354,6 +354,23 @@
           "balance": 136000
         }
       ]
+    },
+    {
+      "id": "haohaoxiansheng",
+      "name": "好好先生",
+      "icon": "好",
+      "type": "single",
+      "installments": [
+        {
+          "id": 708,
+          "period": "1/1",
+          "month": 9,
+          "day": "9月30日",
+          "total": 100000,
+          "sunny": 20000,
+          "balance": 80000
+        }
+      ]
     }
   ],
   "paid": [
@@ -368,5 +385,5 @@
     603,
     701
   ],
-  "nextId": 708
+  "nextId": 709
 }

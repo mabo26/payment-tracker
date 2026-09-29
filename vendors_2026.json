@@ -354,6 +354,23 @@
           "balance": 136000
         }
       ]
+    },
+    {
+      "id": "maidian",
+      "name": "麥典麵粉",
+      "icon": "麥",
+      "type": "single",
+      "installments": [
+        {
+          "id": 709,
+          "period": "1/1",
+          "month": 12,
+          "day": "12月21日",
+          "total": 200000,
+          "sunny": 40000,
+          "balance": 160000
+        }
+      ]
     }
   ],
   "paid": [
@@ -368,5 +385,5 @@
     603,
     701
   ],
-  "nextId": 709
+  "nextId": 710
 }
